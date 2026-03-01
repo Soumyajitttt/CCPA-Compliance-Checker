@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  ccpa-checker:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: Only needed if you use a gated HuggingFace model
+      # For flan-t5-base, HF_TOKEN is NOT required
+      - HF_TOKEN=${HF_TOKEN:-}
+    # Uncomment below if you have an NVIDIA GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

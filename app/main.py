@@ -22,10 +22,7 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ===========================================================================
 # FULL VERBATIM CCPA STATUTE — All 65 pages
-# California Consumer Privacy Act of 2018 (effective 01/01/2025)
-# ===========================================================================
 CCPA_FULL_TEXT = r"""
 1798.100. General Duties of Businesses that Collect Personal Information
 (a) A business that controls the collection of a consumer's personal information shall, at or
@@ -632,9 +629,7 @@ NOT VIOLATIONS (exemptions):
 - Offering loyalty/rewards programs with proper disclosure and consent
 """
 
-# ===========================================================================
-# STRUCTURED RULES for fast keyword matching
-# ===========================================================================
+# Rules for fast keyword matching
 CCPA_RULES = [
     {
         "section": "Section 1798.100",
@@ -945,9 +940,7 @@ If NO, respond ONLY: COMPLIANT
 
 Answer:"""
 
-# ===========================================================================
 # Global model state
-# ===========================================================================
 tokenizer: Optional[T5Tokenizer] = None
 model: Optional[T5ForConditionalGeneration] = None
 _device = "cpu"

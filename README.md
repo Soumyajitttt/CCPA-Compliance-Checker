@@ -321,6 +321,3 @@ ccpa_compliance/
 | Model pre-downloaded at build time | Eliminates slow first-request delays in production |
 | Model loaded once at startup | Prevents per-request model loading latency |
 
-#   C C P A - C o m p l i a n c e - C h e c k e r 
- 
- 

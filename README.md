@@ -2,7 +2,7 @@
 
 **OPEN HACK 2026 — CSA, IISc**
 
-A Dockerized FastAPI service that analyzes natural-language business practice descriptions and returns a structured JSON verdict indicating whether the practice violates the California Consumer Privacy Act (CCPA), along with the exact violated sections.
+A Dockerized FastAPI service that analyzes natural-language business practice descriptions and returns a structured JSON verdict indicating whether the practice violates the California Consumer Privacy Act (CCPA), along with the exact violated sections..
 
 ---
 
@@ -321,5 +321,6 @@ ccpa_compliance/
 | Model pre-downloaded at build time | Eliminates slow first-request delays in production |
 | Model loaded once at startup | Prevents per-request model loading latency |
 
-#   C C P A - C o m p l i a n c e - C h e c k e r  
+#   C C P A - C o m p l i a n c e - C h e c k e r 
+ 
  

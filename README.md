@@ -61,12 +61,12 @@ Each CCPA rule is encoded with:
 
 **Pull the image:**
 ```bash
-docker pull yourusername/ccpa-compliance:latest
+docker pull yourusername/ccpa-llm:latest
 ```
 
 **Run the container:**
 ```bash
-docker run -p 8000:8000 yourusername/ccpa-compliance:latest
+docker run -p 8000:8000 yourusername/ccpa-llm:latest
 ```
 
 Server available at: `http://localhost:8000`

@@ -1,23 +1,18 @@
-# 1. Base image (Python 3.11 Slim is enough)
+# Base image
 FROM python:3.11-slim
 
-# Set environment variables
+# Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Install minimal system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# 2. CACHE MAGIC: Dependencies install it
+# Install Python dependencies (use pinned requirements)
 COPY requirements.txt .
-RUN pip install --no-cache-dir fastapi uvicorn pydantic
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-COPY main.py .
+# Copy application code
+COPY . .
 
 # Expose port
 EXPOSE 8000

@@ -1,158 +1,269 @@
-# CCPA Compliance Detection System
-## OPEN HACK 2026 — CSA, IISc
+CCPA Compliance Checker
 
----
+OPEN HACK 2026 — CSA, IISc
 
-## Solution Overview
+1️⃣ Solution Overview
+Objective
 
-This system uses **Mistral-7B-Instruct-v0.2** (a 7 billion parameter LLM) to analyze whether a described business practice violates the California Consumer Privacy Act (CCPA).
+This system analyzes natural-language descriptions of business data practices and determines whether the practice violates the California Consumer Privacy Act (CCPA). If a violation is detected, the system returns the exact statute section(s) violated in a strictly formatted JSON response.
 
-### How It Works
+Technical Approach
 
-```
-User Prompt
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  Build prompt with CCPA law as context  │
-│  + the business practice description    │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  Mistral-7B-Instruct LLM               │
-│  Reads the law, reads the practice,    │
-│  reasons about violations              │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  Parse JSON from LLM output            │
-│  Validate structure and consistency    │
-└─────────────────────────────────────────┘
-    │
-    ▼
-{"harmful": true/false, "articles": [...]}
-```
+This implementation uses a deterministic rule-based compliance engine built on structured regular expressions.
 
-### Architecture
-- **Model:** `mistralai/Mistral-7B-Instruct-v0.2` (7B parameters, within 8B limit)
-- **Framework:** HuggingFace Transformers + FastAPI
-- **Inference:** GPU (CUDA) with float16 precision for speed
-- **Context:** CCPA statute sections are embedded directly in the prompt
-- **Model loading:** Pre-downloaded at Docker build time — no download at inference
+Instead of relying on a large language model, this system uses:
 
----
+FastAPI — HTTP server
 
-## Docker Run Command
+Pydantic — request validation
 
-```bash
-# Without HF token (Mistral-7B is public, no token needed)
-docker run --gpus all -p 8000:8000 yourusername/ccpa-compliance:latest
+Python re module — structured legal rule matching
 
-# With HF token (if using a gated model)
-docker run --gpus all -p 8000:8000 -e HF_TOKEN=hf_xxxx yourusername/ccpa-compliance:latest
-```
+Docker — containerization
 
----
+System Architecture
+Client Request
+      ↓
+FastAPI Server (/analyze)
+      ↓
+Input Normalization
+      ↓
+Rule Engine Evaluation
+      ↓
+Section Matching
+      ↓
+Strict JSON Response
+Processing Pipeline (End-to-End)
+Step 1 — Input
 
-## Environment Variables
+The system receives:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `HF_TOKEN` | No | HuggingFace access token. Not required for Mistral-7B (public model). Required only if you switch to a gated model like Llama. |
+{"prompt": "<natural language business practice>"}
+Step 2 — Normalization
 
----
+The prompt is:
 
-## GPU Requirements
+Lowercased
 
-| Requirement | Value |
-|------------|-------|
-| Minimum GPU VRAM | 16 GB (float16) |
-| Recommended | 24 GB |
-| CPU-only fallback | Yes (very slow, ~60s per request) |
-| Tested on | NVIDIA A100, RTX 3090 |
+Whitespace-normalized
 
----
+Cleaned for consistent matching
 
-## Building the Docker Image
+Step 3 — Rule Evaluation
 
-```bash
-# Clone / unzip the project
-cd ccpa-compliance
+Each CCPA section is encoded as a structured rule object containing:
 
-# Build the image (this downloads the model — takes ~15-20 mins first time)
-docker build -t yourusername/ccpa-compliance:latest .
+strong_any — Direct violation indicators
 
-# Push to Docker Hub
-docker login
-docker push yourusername/ccpa-compliance:latest
-```
+all_of — Required keyword combinations
 
----
+proximity — Distance-based keyword matching
 
-## Local Setup Instructions (Fallback — No Docker)
+suppress_if_any — Compliance language overrides
 
-```bash
-# Requirements: Python 3.11+, CUDA toolkit installed
+Step 4 — Section Identification
 
-# Install dependencies
-pip install fastapi uvicorn transformers torch accelerate sentencepiece protobuf
+If a rule matches, its corresponding statute section is added to the result list:
 
-# Download the model first
-python download_model.py
+Example:
 
-# Start the server
+"Section 1798.120"
+
+Multiple violations are supported.
+
+Step 5 — Strict JSON Output
+
+The system returns:
+
+{
+  "harmful": true | false,
+  "articles": ["Section 1798.xxx", ...]
+}
+
+Rules enforced:
+
+harmful is a boolean (not a string)
+
+articles is always a list
+
+If harmful = false → articles = []
+
+If harmful = true → articles must be non-empty
+
+No extra text, markdown, or explanation
+
+2️⃣ Docker Run Command (MANDATORY)
+Pull from Docker Hub
+docker pull yourusername/ccpa-compliance:latest
+Run the container
+docker run -p 8000:8000 yourusername/ccpa-compliance:latest
+
+The server will be available at:
+
+http://localhost:8000
+3️⃣ Environment Variables
+
+This implementation does not require any environment variables.
+
+Variable	Required	Description
+None	No	No tokens, API keys, or external services required
+
+No HF_TOKEN
+
+No external APIs
+
+No model downloads
+
+4️⃣ GPU Requirements
+
+This system:
+
+Does NOT require a GPU
+
+Runs fully on CPU
+
+Has no CUDA dependency
+
+Has no VRAM requirement
+
+Minimum Requirements
+
+1 CPU core
+
+~100MB RAM
+
+Python 3.10+
+
+CPU-only fallback
+
+Fully supported (GPU not needed).
+
+5️⃣ Local Setup Instructions (Fallback)
+
+⚠ This section is used only if Docker deployment fails.
+
+Requirements
+
+Ubuntu 20.04+ (or any Linux VM)
+
+Python 3.10+
+
+pip
+
+Step 1 — Install dependencies
+pip install -r requirements.txt
+Step 2 — Start FastAPI server
 uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Test it
+Step 3 — Verify server
 curl http://localhost:8000/health
-```
 
----
+Expected response:
 
-## API Usage Examples
-
-### Health Check
-```bash
+{"status": "ok"}
+6️⃣ API Usage Examples (MANDATORY)
+GET /health
 curl http://localhost:8000/health
-# {"status":"ok"}
-```
 
-### Analyze — Violation Detected
-```bash
+Response:
+
+{"status": "ok"}
+POST /analyze
+Example 1 — Violation
 curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "We sell user browsing data to ad networks without giving users any way to opt out."}'
+     -H "Content-Type: application/json" \
+     -d '{"prompt":"We sell personal data without offering opt-out."}'
 
-# {"harmful":true,"articles":["Section 1798.120"]}
-```
+Response:
 
-### Analyze — No Violation
-```bash
+{
+  "harmful": true,
+  "articles": ["Section 1798.120"]
+}
+Example 2 — Compliant Practice
 curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "We provide a clear privacy policy and honor all deletion requests within 45 days."}'
+     -H "Content-Type: application/json" \
+     -d '{"prompt":"We provide a clear privacy policy and honor deletion requests."}'
 
-# {"harmful":false,"articles":[]}
-```
+Response:
 
-### Interactive API Docs
-Visit `http://localhost:8000/docs` for a browser-based interface to test the API.
+{
+  "harmful": false,
+  "articles": []
+}
+7️⃣ CCPA Sections Covered
 
----
+The system includes rule coverage for:
 
-## CCPA Sections Covered
+Section 1798.100 — Notice at collection
 
-| Section | Consumer Right |
-|---------|---------------|
-| 1798.100 | Know what data is collected |
-| 1798.105 | Delete personal data |
-| 1798.106 | Correct inaccurate data |
-| 1798.110 | Access collected data |
-| 1798.115 | Know what is sold/shared |
-| 1798.120 | Opt out of data sale/sharing |
-| 1798.121 | Limit sensitive data use |
-| 1798.125 | No retaliation for exercising rights |
-| 1798.130 | Notice and disclosure requirements |
-| 1798.135 | Opt-out mechanism on homepage |
+Section 1798.105 — Right to deletion
+
+Section 1798.110 — Right to know
+
+Section 1798.115 — Disclosure of third parties
+
+Section 1798.120 — Sale of personal information
+
+Section 1798.121 — Sensitive personal information
+
+Section 1798.125 — Discrimination
+
+Section 1798.130 — Consumer request methods
+
+Section 1798.135 — Do Not Sell link
+
+Section 1798.150 — Data breach liability
+
+8️⃣ Compliance with Hackathon Evaluation
+
+This system satisfies all technical requirements:
+
+✔ Listens on port 8000
+✔ Exposes GET /health
+✔ Exposes POST /analyze
+✔ Returns strictly valid JSON
+✔ No interactive prompts
+✔ No model downloads at runtime
+✔ No external dependencies
+✔ Fast startup
+✔ Deterministic output
+
+9️⃣ Design Strengths
+
+Deterministic (no hallucinated articles)
+
+Fully auditable legal logic
+
+Structured statute mapping
+
+Suppression rules to reduce false positives
+
+Extremely low latency
+
+Docker-stable deployment
+
+Minimal memory footprint
+
+No GPU dependency
+
+🔐 Hugging Face Token
+
+Not required.
+
+This implementation does not use a gated model and does not require an HF token.
+
+Final Notes
+
+This system was designed for:
+
+Accuracy
+
+Stability
+
+Clean API behavior
+
+Transparent compliance logic
+
+Reliable Docker deployment
+
+Strict adherence to evaluation rules
